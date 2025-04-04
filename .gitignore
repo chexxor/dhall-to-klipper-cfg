@@ -4,11 +4,6 @@
 *.swp
 *.swo
 
-# Project specific
-*.cfg
-*.dhall
-*.dhallb
-
 # Environment
 .env
 .venv
