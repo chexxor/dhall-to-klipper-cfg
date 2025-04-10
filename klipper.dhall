@@ -6,39 +6,78 @@ let Prelude =
     , Optional = https://prelude.dhall-lang.org/Optional/package.dhall
     }
 
-let Kinematics = < Cartesian | CoreXY | Delta | HybridCoreXY | HybridDelta >
+let PrinterModule = ./config/modules/printer.dhall
 
-let showKinematics = \(k : Kinematics) ->
-    merge
-        { Cartesian = "cartesian"
-        , CoreXY = "corexy"
-        , Delta = "delta"
-        , HybridCoreXY = "hybrid_corexy"
-        , HybridDelta = "hybrid_delta"
-        }
-        k
 
-let Stepper =
+let MCU =
     { Type = {
-        stepPin : Text,
-        dirPin : Text,
-        enablePin : Text,
-        microsteps : Natural,
-        rotationDistance : Double,
-        positionEndstop : Double,
-        positionMin : Double,
-        positionMax : Double,
-        homingSpeed : Natural,
-        homingRetractDist : Double,
-        homingPositiveDir : Bool
+        -- Basic MCU configuration
+        serial: Text,
+        baudrate: Natural,
+        restart_method: Text,
+
+        -- Pin mappings for required components
+        pins: {
+            -- Stepper motor pins
+            stepperXStep: Text,
+            stepperXDir: Text,
+            stepperXEnable: Text,
+            stepperXEndstop: Text,
+            stepperYStep: Text,
+            stepperYDir: Text,
+            stepperYEnable: Text,
+            stepperYEndstop: Text,
+            stepperZStep: Text,
+            stepperZDir: Text,
+            stepperZEnable: Text,
+            stepperZEndstop: Text,
+            -- Extruder pins
+            extruderStep: Text,
+            extruderDir: Text,
+            extruderEnable: Text,
+            extruderHeater: Text,
+            extruderSensor: Text,
+            -- Bed pins
+            bedHeater: Text,
+            bedSensor: Text,
+            -- Fan pins
+            partCoolingFan: Text,
+            heaterCoolingFan: Text,
+            controllerFan: Text,
+            -- Probe pins
+            probeSignal: Text,
+            probeServo: Text
+        },
+
+        -- Optional features (all optional)
+        optional_pins: Optional {
+            neopixelPin: Text,
+            filamentSensorPin: Text,
+            powerMonitorPin: Text
+        },
+
+        -- Display configuration (all optional)
+        display: Optional {
+            spi_bus: Text,
+            cs_pin: Text,
+            dc_pin: Text,
+            reset_pin: Text
+        },
+
+        -- Board pin aliases (optional)
+        pin_aliases: Optional {
+            -- Any number of pin aliases can be defined
+            _: Text
+        }
       }
     , default = {
-        microsteps = 16,
-        homingSpeed = 50,
-        homingRetractDist = 5.0,
-        homingPositiveDir = True
+        baudrate = 250000,
+        restart_method = "command"
       }
     }
+
+
+
 
 let Extruder =
     { Type = {
@@ -94,111 +133,162 @@ let Fan =
       }
     }
 
-let Printer =
+let DeltaParams =
     { Type = {
-        name : Text,
-        kinematics : Kinematics,
-        maxVelocity : Natural,
-        maxAccel : Natural,
-        maxZVelocity : Natural,
-        maxZAccel : Natural,
-        stepperX : Optional Stepper.Type,
-        stepperY : Optional Stepper.Type,
-        stepperZ : Optional Stepper.Type,
-        extruder : Optional Extruder.Type,
-        heaterBed : Optional Heater.Type,
-        fan : Optional Fan.Type
+        deltaRadius : Double,
+        armLength : Double,
+        towerAngles : List Double,
+        endstopAdjustments : List Double,
+        angleCorrections : List Double,
+        radiusCorrection : Double,
+        printRadius : Double,
+        maxZHeight : Double
       }
     , default = {
-        maxVelocity = 200,
-        maxAccel = 3000,
-        maxZVelocity = 5,
-        maxZAccel = 100,
-        stepperX = None Stepper.Type,
-        stepperY = None Stepper.Type,
-        stepperZ = None Stepper.Type,
-        extruder = None Extruder.Type,
-        heaterBed = None Heater.Type,
-        fan = None Fan.Type
+        deltaRadius = 130.0,
+        armLength = 250.0,
+        towerAngles = [ 210.0, 330.0, 90.0 ],
+        endstopAdjustments = [ 0.0, 0.0, 0.0 ],
+        angleCorrections = [ 0.0, 0.0, 0.0 ],
+        radiusCorrection = 0.0,
+        printRadius = 100.0,
+        maxZHeight = 200.0
       }
     }
 
-let renderSection = \(name : Text) -> \(fields : List { mapKey : Text, mapValue : Text }) ->
+let convertToKlipperFields = \(record : { _ : { _ : Text } }) ->
+    let convertFieldName = \(name : Text) ->
+        Prelude.Text.lowerASCII (Prelude.Text.replace "([A-Z])" ("_" ++ "${1}") name)
+
+    let convertValue = \(value : { _ : Text }) ->
+        merge
+            { Text = \(x : Text) -> x
+            , Natural = \(x : Natural) -> Prelude.Natural.show x
+            , Double = \(x : Double) -> Prelude.Double.show x
+            , Bool = \(x : Bool) -> Prelude.Bool.show x
+            , List = \(x : List { _ : Text }) ->
+                Prelude.Text.concatMapSep ", " { _ : Text } (\(y : { _ : Text }) ->
+                    convertValue y
+                ) x
+            }
+            value
+
+    let example0 = assert : convertFieldName "maxVelocity" ≡ "max_velocity"
+    let example1 = assert : convertFieldName "stepperXStep" ≡ "stepper_x_step"
+    let example2 = assert : convertFieldName "nozzleDiameter" ≡ "nozzle_diameter"
+    let example3 = assert : convertFieldName "PIDKp" ≡ "pid_kp"
+    let example4 = assert : convertFieldName "endstopAdjustments" ≡ "endstop_adjustments"
+
+    let textRecord = record // { _ = Text }
+    in Prelude.List.fold
+        { mapKey : Text, mapValue : Text }
+        (List { mapKey : Text, mapValue : Text })
+        (\(field : { mapKey : Text, mapValue : Text }) -> \(acc : List { mapKey : Text, mapValue : Text }) ->
+            acc # [ { mapKey = convertFieldName field.mapKey, mapValue = field.mapValue } ]
+        )
+        ([] : List { mapKey : Text, mapValue : Text })
+        (toMap textRecord)
+
+let renderSection = \(module : Text) -> \(prefix : Text) -> \(fields : List { mapKey : Text, mapValue : Text }) ->
     let renderField = \(field : { mapKey : Text, mapValue : Text }) ->
         "${field.mapKey}: ${field.mapValue}"
     in  ''
-        [${name}]
+        [${module} ${prefix}]
         ${Prelude.Text.concatMapSep "\n" { mapKey : Text, mapValue : Text } renderField fields}
         ''
 
-let renderPrinter = \(printer : Printer.Type) ->
-    let printerFields = [
-        { mapKey = "name", mapValue = printer.name },
-        { mapKey = "kinematics", mapValue = showKinematics printer.kinematics },
-        { mapKey = "max_velocity", mapValue = Prelude.Natural.show printer.maxVelocity },
-        { mapKey = "max_accel", mapValue = Prelude.Natural.show printer.maxAccel },
-        { mapKey = "max_z_velocity", mapValue = Prelude.Natural.show printer.maxZVelocity },
-        { mapKey = "max_z_accel", mapValue = Prelude.Natural.show printer.maxZAccel }
-    ]
-    in  renderSection "printer" printerFields
-
 let renderStepper = \(name : Text) -> \(stepper : Stepper.Type) ->
-    let stepperFields = [
-        { mapKey = "step_pin", mapValue = stepper.stepPin },
-        { mapKey = "dir_pin", mapValue = stepper.dirPin },
-        { mapKey = "enable_pin", mapValue = stepper.enablePin },
-        { mapKey = "microsteps", mapValue = Prelude.Natural.show stepper.microsteps },
-        { mapKey = "rotation_distance", mapValue = Prelude.Double.show stepper.rotationDistance },
-        { mapKey = "position_endstop", mapValue = Prelude.Double.show stepper.positionEndstop },
-        { mapKey = "position_min", mapValue = Prelude.Double.show stepper.positionMin },
-        { mapKey = "position_max", mapValue = Prelude.Double.show stepper.positionMax },
-        { mapKey = "homing_speed", mapValue = Prelude.Natural.show stepper.homingSpeed },
-        { mapKey = "homing_retract_dist", mapValue = Prelude.Double.show stepper.homingRetractDist },
-        { mapKey = "homing_positive_dir", mapValue = Prelude.Bool.show stepper.homingPositiveDir }
-    ]
-    in  renderSection "stepper_${name}" stepperFields
+    let fields = convertToKlipperFields stepper
+    in renderSection "stepper" name fields
 
 let renderExtruder = \(extruder : Extruder.Type) ->
-    let extruderFields = [
-        { mapKey = "step_pin", mapValue = extruder.stepPin },
-        { mapKey = "dir_pin", mapValue = extruder.dirPin },
-        { mapKey = "enable_pin", mapValue = extruder.enablePin },
-        { mapKey = "microsteps", mapValue = Prelude.Natural.show extruder.microsteps },
-        { mapKey = "rotation_distance", mapValue = Prelude.Double.show extruder.rotationDistance },
-        { mapKey = "nozzle_diameter", mapValue = Prelude.Double.show extruder.nozzleDiameter },
-        { mapKey = "filament_diameter", mapValue = Prelude.Double.show extruder.filamentDiameter },
-        { mapKey = "max_extrude_only_distance", mapValue = Prelude.Double.show extruder.maxExtrudeOnlyDistance },
-        { mapKey = "max_extrude_only_velocity", mapValue = Prelude.Natural.show extruder.maxExtrudeOnlyVelocity },
-        { mapKey = "max_extrude_only_accel", mapValue = Prelude.Natural.show extruder.maxExtrudeOnlyAccel }
-    ]
-    in  renderSection "extruder" extruderFields
+    let fields = convertToKlipperFields extruder
+    in renderSection "extruder" "" fields
 
 let renderHeater = \(name : Text) -> \(heater : Heater.Type) ->
-    let heaterFields = [
-        { mapKey = "heater_pin", mapValue = heater.heaterPin },
-        { mapKey = "sensor_type", mapValue = heater.sensorType },
-        { mapKey = "sensor_pin", mapValue = heater.sensorPin },
-        { mapKey = "control", mapValue = heater.control },
-        { mapKey = "pid_Kp", mapValue = Prelude.Double.show heater.pidKp },
-        { mapKey = "pid_Ki", mapValue = Prelude.Double.show heater.pidKi },
-        { mapKey = "pid_Kd", mapValue = Prelude.Double.show heater.pidKd },
-        { mapKey = "min_temp", mapValue = Prelude.Double.show heater.minTemp },
-        { mapKey = "max_temp", mapValue = Prelude.Double.show heater.maxTemp }
-    ]
-    in  renderSection "heater_${name}" heaterFields
+    let fields = convertToKlipperFields heater
+    in renderSection "heater" name fields
 
 let renderFan = \(name : Text) -> \(fan : Fan.Type) ->
     let baseFields = [ { mapKey = "pin", mapValue = fan.pin } ]
-    let kickStartField = 
+    let kickStartField =
         if Prelude.Optional.null Double fan.kickStartTime
         then [] : List { mapKey : Text, mapValue : Text }
         else [ { mapKey = "kick_start_time", mapValue = Prelude.Double.show (Prelude.Optional.default Double 0.0 fan.kickStartTime) } ]
-    let offBelowField = 
+    let offBelowField =
         if Prelude.Optional.null Double fan.offBelow
         then [] : List { mapKey : Text, mapValue : Text }
         else [ { mapKey = "off_below", mapValue = Prelude.Double.show (Prelude.Optional.default Double 0.0 fan.offBelow) } ]
     let allFields = baseFields # kickStartField # offBelowField
-    in  renderSection "fan_${name}" allFields
+    in renderSection "fan" name allFields
+
+let renderDeltaParams = \(params : DeltaParams.Type) ->
+    let fields = convertToKlipperFields params
+    in renderSection "delta" "" fields
+
+let renderMCU = \(name : Text) -> \(mcu : MCU.Type) ->
+    let basicFields = [
+        { mapKey = "serial", mapValue = mcu.serial },
+        { mapKey = "baudrate", mapValue = Prelude.Natural.show mcu.baudrate },
+        { mapKey = "restart_method", mapValue = mcu.restart_method }
+    ]
+
+    let renderRecord = \(record : { _ : Text }) ->
+        toMap record
+
+    let renderOptionalRecord = \(record : Optional { _ : Text }) ->
+        if Prelude.Optional.null { _ : Text } record
+        then [] : List { mapKey : Text, mapValue : Text }
+        else renderRecord (Prelude.Optional.default { _ : Text } {=} record)
+
+    let renderDisplay = \(display : Optional { spi_bus : Text, cs_pin : Text, dc_pin : Text, reset_pin : Text }) ->
+        if Prelude.Optional.null { spi_bus : Text, cs_pin : Text, dc_pin : Text, reset_pin : Text } display
+        then [] : List { mapKey : Text, mapValue : Text }
+        else renderRecord (Prelude.Optional.default { spi_bus : Text, cs_pin : Text, dc_pin : Text, reset_pin : Text } { spi_bus = "", cs_pin = "", dc_pin = "", reset_pin = "" } display)
+
+    let allFields = basicFields
+        # renderRecord mcu.pins
+        # renderOptionalRecord mcu.optional_pins
+        # renderDisplay mcu.display
+        # renderOptionalRecord mcu.pin_aliases
+
+    renderSection "mcu" name allFields
+
+let renderOptional = \(a : Type) -> \(f : a -> Text) -> \(optional : Optional a) ->
+    Prelude.Optional.fold a optional Text f ""
+
+let renderOptionalStepper = \(name : Text) ->
+    renderOptional Stepper.Type (\(stepper : Stepper.Type) -> renderStepper name stepper)
+
+let renderOptionalExtruder =
+    renderOptional Extruder.Type renderExtruder
+
+let renderOptionalHeater = \(name : Text) ->
+    renderOptional Heater.Type (\(heater : Heater.Type) -> renderHeater name heater)
+
+let renderOptionalFan = \(name : Text) ->
+    renderOptional Fan.Type (\(fan : Fan.Type) -> renderFan name fan)
+
+let renderOptionalDeltaParams =
+    renderOptional DeltaParams.Type renderDeltaParams
+
+let renderOptionalMCU = \(name : Text) ->
+    renderOptional MCU.Type (\(mcu : MCU.Type) -> renderMCU name mcu)
+
+let renderConfig2 = \(printer : PrinterModule.Printer.Type) ->
+    Prelude.Text.concatSep "\n\n" (
+        Prelude.List.filter Text (\(x : Text) -> x != "") [
+            PrinterModule.renderPrinter printer,
+            renderOptionalStepper "x" printer.stepperX,
+            renderOptionalStepper "y" printer.stepperY,
+            renderOptionalStepper "z" printer.stepperZ,
+            renderOptionalExtruder printer.extruder,
+            renderOptionalHeater "bed" printer.heaterBed,
+            renderOptionalFan "general" printer.fan,
+            renderOptionalDeltaParams printer.deltaParams,
+            renderOptionalMCU "mcu" printer.mcu
+        ]
+    )
 
 let renderConfig = \(printer : Printer.Type) ->
     let sections = [ renderPrinter printer ]
@@ -208,6 +298,8 @@ let renderConfig = \(printer : Printer.Type) ->
     let sections = sections # Prelude.Optional.fold Extruder.Type printer.extruder (List Text) (\(extruder : Extruder.Type) -> [ renderExtruder extruder ]) ([] : List Text)
     let sections = sections # Prelude.Optional.fold Heater.Type printer.heaterBed (List Text) (\(heater : Heater.Type) -> [ renderHeater "bed" heater ]) ([] : List Text)
     let sections = sections # Prelude.Optional.fold Fan.Type printer.fan (List Text) (\(fan : Fan.Type) -> [ renderFan "general" fan ]) ([] : List Text)
+    let sections = sections # Prelude.Optional.fold DeltaParams.Type printer.deltaParams (List Text) (\(params : DeltaParams.Type) -> [ renderDeltaParams params ]) ([] : List Text)
+    let sections = sections # Prelude.Optional.fold MCU.Type printer.mcu (List Text) (\(mcu : MCU.Type) -> [ renderMCU "mcu" mcu ]) ([] : List Text)
     in Prelude.Text.concatSep "\n\n" sections
 
 in  { Printer = Printer
@@ -215,6 +307,8 @@ in  { Printer = Printer
     , Extruder = Extruder
     , Heater = Heater
     , Fan = Fan
+    , DeltaParams = DeltaParams
+    , MCU = MCU
     , Kinematics = Kinematics
     , renderConfig = renderConfig
-    } 
+    }
