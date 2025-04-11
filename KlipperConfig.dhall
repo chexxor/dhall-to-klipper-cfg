@@ -8,6 +8,7 @@ let Prelude =
     , Map = https://prelude.dhall-lang.org/Map/package.dhall
     }
 
+
 let KlipperConfigProperty : Type = { mapKey : Text, mapValue : Optional Text }
 
 let renderKlipperConfigProperty
@@ -18,7 +19,7 @@ let renderKlipperConfigProperty
 
 -- [name prefix]
 -- properties
--- Example:
+-- Example: Value
 -- [fan my_fan]
 -- pin: my_pin
 -- min_speed: 100
@@ -58,8 +59,55 @@ let renderKlipperConfig
             Prelude.List.map KlipperConfigSection Text renderKlipperConfigSection config
         )
 
+-- Klipper uses the hardware names for these pins - for example PA4.
+-- Pin names may be preceded by ! to indicate that a reverse polarity
+-- should be used (eg, trigger on low instead of high).
+-- Input pins may be preceded by ^ to indicate that a hardware pull-up
+-- resistor should be enabled for the pin.
+-- If the micro-controller supports pull-down resistors then an input
+-- pin may alternatively be preceded by ~.
+let McuPinResistor = < PullUp | PullDown | None >
+let McuPinInput = {
+    Type = {
+        hardware_name: Text,
+        reverse_polarity: Bool, -- to specify !
+        resistor: McuPinResistor, -- to specify ^ or ~
+    },
+    default = {
+        reverse_polarity = False, -- !
+        resistor = McuPinResistor.None, -- exclude ^ or ~
+    }
+}
+let McuPinOutput = {
+    Type = {
+        hardware_name: Text,
+        reverse_polarity: Bool, -- to specify !
+    },
+    default = {
+        reverse_polarity = False, -- without !
+    }
+}
+
+let renderMcuPin
+    : McuPin -> Text
+    = \(pin : McuPin) ->
+    let polarityText = if pin.reverse_polarity then "!" else ""
+    let resistorText =
+        merge
+        { PullUp = "^"
+        , PullDown = "~"
+        , None = ""
+        } pin.resistor
+    in "${polarityText}${resistorText}${pin.hardware_name}"
+
+
 in  { KlipperConfigProperty = KlipperConfigProperty
     , KlipperConfigSection = KlipperConfigSection
     , KlipperConfig = KlipperConfig
     , renderKlipperConfig = renderKlipperConfig
+
+    , McuPinResistor = McuPinResistor
+    , McuPinInput = McuPinInput
+    , McuPinOutput = McuPinOutput
+    , renderMcuPin = renderMcuPin
     }

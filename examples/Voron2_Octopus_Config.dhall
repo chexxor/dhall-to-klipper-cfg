@@ -1,16 +1,24 @@
 let KlipperConfig = ../klipperConfig.dhall
-let PrinterModule = ./../KlipperConfigModule/Printer.dhall
-let StepperModule = ./../KlipperConfigModule/Stepper.dhall
-let HeaterBedModule = ./../KlipperConfigModule/HeaterBed.dhall
-let ExtruderModule = ./../KlipperConfigModule/Extruder.dhall
-let FanModule = ./../KlipperConfigModule/Fan.dhall
+let PrinterModule = ./../KlipperModule/Printer.dhall
+let StepperModule = ./../KlipperModule/Stepper.dhall
+let HeaterBedModule = ./../KlipperModule/HeaterBed.dhall
+let ExtruderModule = ./../KlipperModule/Extruder.dhall
+let FanModule = ./../KlipperModule/Fan.dhall
+let McuModule = ./../KlipperModule/Mcu.dhall
+let McuHardware = ./../KlipperHardware/mcu/octopus_pro_v1.1.dhall
+
+
+let mcu = McuModule.toKlipperConfigSection
+    { name = None Text
+    , mcu = McuModule.McuConfig::{ serial = "/dev/ttyACM0" }
+    }
 
 let stepper =
     \(name : Text)
-    -> \(stepPin : Text)
-    -> \(dirPin : Text)
-    -> \(enablePin : Text)
-    -> \(endstopPin : Text)
+    -> \(stepPin : KlipperConfig.McuPinOutput)
+    -> \(dirPin : KlipperConfig.McuPinOutput)
+    -> \(enablePin : KlipperConfig.McuPinOutput)
+    -> \(endstopPin : KlipperConfig.McuPinInput)
     ->
     { name = name
     , stepper = StepperModule.StepperConfig::
@@ -28,10 +36,10 @@ let stepper =
 
 let stepperZ =
     \(name : Text)
-    -> \(stepPin : Text)
-    -> \(dirPin : Text)
-    -> \(enablePin : Text)
-    -> \(endstopPin : Optional Text)
+    -> \(stepPin : KlipperConfig.McuPinOutput)
+    -> \(dirPin : KlipperConfig.McuPinOutput)
+    -> \(enablePin : KlipperConfig.McuPinOutput)
+    -> \(endstopPin : KlipperConfig.McuPinInput)
     ->
     { name = name
     , stepper = StepperModule.StepperConfig::
@@ -52,22 +60,46 @@ let stepperZ =
         }
     }
 
-let printer = PrinterModule.toKlipperConfigSection
-    { printer = (PrinterModule.Printer::
-            { kinematics = PrinterModule.Kinematics.CoreXY
-            , max_velocity = 300
-            , max_accel = 3000
-            , max_z_velocity = Some 15
-            , max_z_accel = Some 350
-            , square_corner_velocity = Some 5.0
-            }
-        )
-    , stepper_1 = (stepper "stepper_x" "PF13" "PF12" "PF14" "PG6")
-    , stepper_2 = (stepper "stepper_y" "PG0" "PG1" "PF15" "PG9")
-    , stepper_3 = (stepperZ "stepper_z" "PF11" "PG3" "PG5" (Some "PG10"))
-    , stepper_4 = Some (stepperZ "stepper_z1" "PG4" "PC1" "!PA0" (None Text))
-    , stepper_5 = Some (stepperZ "stepper_z2" "PF9" "!PF10" "!PG2" (None Text))
-    , stepper_6 = Some (stepperZ "stepper_z3" "PC13" "PF0" "!PF1" (None Text))
+-- let printer = PrinterModule.toKlipperConfigSection
+let printerCfg =
+    { printer = PrinterModule.Printer::
+        { kinematics = PrinterModule.Kinematics.CoreXY
+        , max_velocity = 300
+        , max_accel = 3000
+        , max_z_velocity = Some 15
+        , max_z_accel = Some 350
+        , square_corner_velocity = Some 5.0
+        }
+    , stepper_1 = (stepper "stepper_x"
+        McuHardware.stepper_x.step_pin
+        McuHardware.stepper_x.dir_pin
+        McuHardware.stepper_x.enable_pin
+        McuHardware.stepper_x.endstop_pin)
+    , stepper_2 = (stepper "stepper_y"
+        McuHardware.stepper_y.step_pin
+        McuHardware.stepper_y.dir_pin
+        McuHardware.stepper_y.enable_pin
+        McuHardware.stepper_y.endstop_pin)
+    , stepper_3 = (stepperZ "stepper_z"
+        McuHardware.stepper_z.step_pin
+        ("!" ++ McuHardware.stepper_z.dir_pin)
+        ("!" ++ McuHardware.stepper_z.enable_pin)
+        ("!" ++ McuHardware.stepper_z.endstop_pin)
+    , stepper_4 = Some (stepperZ "stepper_z1"
+        McuHardware.stepper_z1.step_pin
+        McuHardware.stepper_z1.dir_pin
+        ("!" ++ McuHardware.stepper_z1.enable_pin)
+        McuHardware.stepper_z1.endstop_pin)
+    , stepper_5 = Some (stepperZ "stepper_z2"
+        McuHardware.stepper_z2.step_pin
+        ("!" ++ McuHardware.stepper_z2.dir_pin)
+        ("!" ++ McuHardware.stepper_z2.enable_pin)
+        McuHardware.stepper_z2.endstop_pin)
+    , stepper_6 = Some (stepperZ "stepper_z3"
+        McuHardware.stepper_z3.step_pin
+        McuHardware.stepper_z3.dir_pin
+        ("!" ++ McuHardware.stepper_z3.enable_pin)
+        McuHardware.stepper_z3.endstop_pin)
     }
 
 let heaterBed = HeaterBedModule.toKlipperConfigSection

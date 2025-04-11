@@ -1,4 +1,4 @@
-let McuModule = ./../KlipperConfigModule/Mcu.dhall
+let McuModule = ./../KlipperModule/Mcu.dhall
 
 let mcu = McuModule.McuConfig::
     { serial = "/tmp/klipper_host_mcu"

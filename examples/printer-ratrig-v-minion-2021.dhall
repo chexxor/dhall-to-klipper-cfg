@@ -8,7 +8,7 @@ let buildStepper = ./../config/hardware/stepper/constructor.dhall
 let DirectDrive = ./../config/hardware/extruder/direct_drive.dhall
 let buildExtruder = ./../config/hardware/extruder/constructor.dhall
 
-let PrinterModule = ./../KlipperConfigModule/Printer.dhall
+let PrinterModule = ./../KlipperModule/Printer.dhall
 
 let printer = PrinterModule.cartesianPrinter
     { max_velocity = 300
@@ -25,7 +25,7 @@ let stepperX = StepperModule.Stepper::
     }
 
 
-KlipperConfig.renderKlipperConfigModules [
+KlipperConfig.renderKlipperModules [
     printer
 ]
 

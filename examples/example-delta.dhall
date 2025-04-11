@@ -1,11 +1,11 @@
 let KlipperConfig = ../klipperConfig.dhall
-let PrinterModule = ./../KlipperConfigModule/Printer.dhall
-let StepperModule = ./../KlipperConfigModule/Stepper.dhall
-let HeaterBedModule = ./../KlipperConfigModule/HeaterBed.dhall
-let ExtruderModule = ./../KlipperConfigModule/Extruder.dhall
-let FanModule = ./../KlipperConfigModule/Fan.dhall
-let McuModule = ./../KlipperConfigModule/Mcu.dhall
-let DeltaCalibrateModule = ./../KlipperConfigModule/DeltaCalibrate.dhall
+let PrinterModule = ./../KlipperModule/Printer.dhall
+let StepperModule = ./../KlipperModule/Stepper.dhall
+let HeaterBedModule = ./../KlipperModule/HeaterBed.dhall
+let ExtruderModule = ./../KlipperModule/Extruder.dhall
+let FanModule = ./../KlipperModule/Fan.dhall
+let McuModule = ./../KlipperModule/Mcu.dhall
+let DeltaCalibrateModule = ./../KlipperModule/DeltaCalibrate.dhall
 
 
 let printer = PrinterModule.toKlipperConfigSection

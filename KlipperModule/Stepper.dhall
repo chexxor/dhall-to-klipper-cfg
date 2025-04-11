@@ -11,14 +11,32 @@ let Prelude =
 
 let StepperConfig =
     { Type =
-        { step_pin : Text
-        , dir_pin : Text
-        , enable_pin : Optional Text
-        , endstop_pin: Optional Text
+        -- Step GPIO pin (triggered high).
+        { step_pin : KlipperConfig.McuPinOutput
+        -- Direction GPIO pin (high indicates positive direction).
+        , dir_pin : KlipperConfig.McuPinOutput
+        -- Enable pin (default is enable high; use ! to indicate enable low).
+        , enable_pin : Optional KlipperConfig.McuPinOutput
+        -- Endstop switch detection pin. If this endstop pin is on a
+        -- different mcu than the stepper motor then it enables "multi-mcu-homing".
+        , endstop_pin: Optional KlipperConfig.McuPinInput
+        -- Distance (in mm) that the axis travels with one full rotation of
+        -- the stepper motor (or final gear if gear_ratio is specified).
         , rotation_distance : Double
+        -- The number of microsteps the stepper motor driver uses.
         , microsteps : Natural
+        -- The number of full steps for one rotation of the stepper motor.
+        -- Set this to 200 for a 1.8 degree stepper motor or set to 400 for a
+        -- 0.9 degree motor. The default is 200.
         , full_steps_per_rotation: Optional Natural
+        -- The gear ratio if the stepper motor is connected to the axis via a
+        -- gearbox. For example, one may specify "5:1" if a 5 to 1 gearbox is in use.
         , gear_ratio: Optional Text
+        -- The minimum time between the step pulse signal edge and the
+        -- following "unstep" signal edge.
+        -- The default is 0.000000100 (100ns) for TMC steppers that are
+        -- configured in UART or SPI mode, and the default is 0.000002 (which
+        -- is 2us) for all other steppers.
         , step_pulse_duration: Optional Double
         , position_endstop : Optional Double
         , position_min : Optional Double
@@ -33,8 +51,8 @@ let StepperConfig =
         , angle : Optional Double
       }
     , default =
-        { enable_pin = None Text
-        , endstop_pin = None Text
+        { enable_pin = None KlipperConfig.McuPinOutput
+        , endstop_pin = None KlipperConfig.McuPinInput
         , full_steps_per_rotation = None Natural
         , gear_ratio = None Text
         , step_pulse_duration = None Double
@@ -84,10 +102,10 @@ let NamedStepper : Type =
 let toStepperConfigText
     : StepperConfig.Type -> StepperConfigText
     = \(stepperConfig : StepperConfig.Type) ->
-    { step_pin = Some stepperConfig.step_pin
-    , dir_pin = Some stepperConfig.dir_pin
-    , enable_pin = stepperConfig.enable_pin
-    , endstop_pin = stepperConfig.endstop_pin
+    { step_pin = Some (KlipperConfig.renderMcuPin stepperConfig.step_pin)
+    , dir_pin = Some (KlipperConfig.renderMcuPin stepperConfig.dir_pin)
+    , enable_pin = Prelude.Optional.map KlipperConfig.renderMcuPin stepperConfig.enable_pin
+    , endstop_pin = Prelude.Optional.map KlipperConfig.renderMcuPin stepperConfig.endstop_pin
     , rotation_distance = Some (Prelude.Double.show stepperConfig.rotation_distance)
     , microsteps = Some (Prelude.Natural.show stepperConfig.microsteps)
     , full_steps_per_rotation = Prelude.Optional.map Natural Text Prelude.Natural.show stepperConfig.full_steps_per_rotation
