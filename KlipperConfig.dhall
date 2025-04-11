@@ -88,9 +88,9 @@ let McuPinOutput = {
     }
 }
 
-let renderMcuPin
-    : McuPin -> Text
-    = \(pin : McuPin) ->
+let renderMcuPinInput
+    : McuPinInput.Type -> Text
+    = \(pin : McuPinInput.Type) ->
     let polarityText = if pin.reverse_polarity then "!" else ""
     let resistorText =
         merge
@@ -99,6 +99,22 @@ let renderMcuPin
         , None = ""
         } pin.resistor
     in "${polarityText}${resistorText}${pin.hardware_name}"
+
+let renderMcuPinOutput
+    : McuPinOutput.Type -> Text
+    = \(pin : McuPinOutput.Type) ->
+    let polarityText = if pin.reverse_polarity then "!" else ""
+    in "${polarityText}${pin.hardware_name}"
+
+-- Comment this out until it is needed.
+-- let McuPin : Type = < Input : McuPinInput.Type | Output : McuPinOutput.Type >
+-- let renderMcuPin
+--     : McuPin -> Text
+--     = \(pin : McuPin) ->
+--     merge
+--     { Input = renderMcuPinInput
+--     , Output = renderMcuPinOutput
+--     } pin
 
 
 in  { KlipperConfigProperty = KlipperConfigProperty
@@ -109,5 +125,7 @@ in  { KlipperConfigProperty = KlipperConfigProperty
     , McuPinResistor = McuPinResistor
     , McuPinInput = McuPinInput
     , McuPinOutput = McuPinOutput
-    , renderMcuPin = renderMcuPin
+
+    , renderMcuPinInput = renderMcuPinInput
+    , renderMcuPinOutput = renderMcuPinOutput
     }

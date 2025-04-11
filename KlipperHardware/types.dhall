@@ -1,41 +1,42 @@
-
+let Prelude = https://prelude.dhall-lang.org/package.dhall
 let McuModule = ../KlipperModule/Mcu.dhall
 let KlipperConfig = ../KlipperConfig.dhall
 
 let StepperInterface = {
     Type = {
         -- Step GPIO pin (triggered high).
-        step_pin: KlipperConfig.McuPinOutput,
+        step_pin: KlipperConfig.McuPinOutput.Type,
         -- Direction GPIO pin (high indicates positive direction).
-        dir_pin: KlipperConfig.McuPinOutput,
+        dir_pin: KlipperConfig.McuPinOutput.Type,
         -- Enable pin (default is enable high; use ! to indicate enable
         -- low). If this parameter is not provided then the stepper motor
         -- driver must always be enabled.
-        enable_pin: Optional KlipperConfig.McuPinOutput,
+        enable_pin: Optional KlipperConfig.McuPinOutput.Type,
         -- Endstop switch detection pin. If this endstop pin is on a
         -- different mcu than the stepper motor then it enables "multi-mcu-homing".
-        endstop_pin: Optional KlipperConfig.McuPinInput
-    }
+        endstop_pin: Optional KlipperConfig.McuPinInput.Type
+    },
     default = {
-        enable_pin = None KlipperConfig.McuPinOutput,
-        endstop_pin = None KlipperConfig.McuPinInput
+        enable_pin = None KlipperConfig.McuPinOutput.Type,
+        endstop_pin = None KlipperConfig.McuPinInput.Type
     }
 }
 
+let HeaterInterface = {
+    heater_pin: KlipperConfig.McuPinOutput.Type,
+    sensor_pin: KlipperConfig.McuPinInput.Type
+}
+
+let FanInterface = {
+    pin: KlipperConfig.McuPinOutput.Type
+}
+
 let ExtruderInterface = {
-    stepper: StepperInterface,
+    stepper: StepperInterface.Type,
     heater: HeaterInterface,
     fan: FanInterface
 }
 
-let HeaterInterface = {
-    heater_pin: KlipperConfig.McuPinOutput,
-    sensor_pin: KlipperConfig.McuPinInput
-}
-
-let FanInterface = {
-    pin: KlipperConfig.McuPinOutput
-}
 
 let MCU = {
     Type = {
@@ -44,39 +45,38 @@ let MCU = {
         baudrate: Natural,
         restart_method: Text,
         -- Stepper motor pins
-        stepper_x : StepperInterface,
-        stepper_y : StepperInterface,
-        stepper_z : StepperInterface,
-        stepper_z1 : Optional StepperInterface,
-        stepper_z2 : Optional StepperInterface,
-        stepper_z3 : Optional StepperInterface,
+        stepper_x : StepperInterface.Type,
+        stepper_y : StepperInterface.Type,
+        stepper_z : StepperInterface.Type,
+        stepper_z1 : Optional StepperInterface.Type,
+        stepper_z2 : Optional StepperInterface.Type,
+        stepper_z3 : Optional StepperInterface.Type,
         -- Extruder pins
         extruder: ExtruderInterface,
         -- Bed pins
         bed: HeaterInterface,
         -- Fan pins
-        part_cooling_fan_pin: KlipperConfig.McuPinOutput,
-        heater_cooling_fan_pin: KlipperConfig.McuPinOutput,
-        controller_fan_pin: KlipperConfig.McuPinOutput,
-        extra_fans: Optional (List KlipperConfig.McuPinOutput),
+        part_cooling_fan_pin: KlipperConfig.McuPinOutput.Type,
+        heater_cooling_fan_pin: KlipperConfig.McuPinOutput.Type,
+        controller_fan_pin: KlipperConfig.McuPinOutput.Type,
+        extra_fans: Optional (List KlipperConfig.McuPinOutput.Type),
         -- Probe pins
-        probe_signal_pin: KlipperConfig.McuPinInput,
-        probe_servo_pin: KlipperConfig.McuPinOutput,
-        
-        neopixel_pin: Optional KlipperConfig.McuPinOutput,
-        filament_sensor_pin: Optional KlipperConfig.McuPinInput,
-        power_monitor_pin: Optional KlipperConfig.McuPinInput,
+        probe_signal_pin: KlipperConfig.McuPinInput.Type,
+        probe_servo_pin: KlipperConfig.McuPinOutput.Type,
+
+        neopixel_pin: Optional KlipperConfig.McuPinOutput.Type,
+        filament_sensor_pin: Optional KlipperConfig.McuPinInput.Type,
+        power_monitor_pin: Optional KlipperConfig.McuPinInput.Type,
 
         -- Board pin aliases (optional)
-        pin_aliases: Optional (Map Text)
-    }
+        pin_aliases: Optional (Prelude.Map.Type Text Text)
+    },
     default = {
-        pin_aliases = None (Map Text),
-        stepper_z1 = None StepperInterface,
-        stepper_z2 = None StepperInterface,
-        stepper_z3 = None StepperInterface,
-        extra_fans = None (List KlipperConfig.McuPinOutput),
-        pin_aliases = None (Map Text)
+        stepper_z1 = None StepperInterface.Type,
+        stepper_z2 = None StepperInterface.Type,
+        stepper_z3 = None StepperInterface.Type,
+        extra_fans = None (List KlipperConfig.McuPinOutput.Type),
+        pin_aliases = None (Prelude.Map.Type Text Text),
     }
 }
 
@@ -172,7 +172,6 @@ let MCU = {
 -- }
 
 in {
-    McuPin = McuPin,
     StepperInterface = StepperInterface,
     ExtruderInterface = ExtruderInterface,
     HeaterInterface = HeaterInterface,
