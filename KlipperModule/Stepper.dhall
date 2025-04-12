@@ -12,14 +12,14 @@ let Prelude =
 let StepperConfig =
     { Type =
         -- Step GPIO pin (triggered high).
-        { step_pin : KlipperConfig.McuPinOutput
+        { step_pin : KlipperConfig.McuPinOutput.Type
         -- Direction GPIO pin (high indicates positive direction).
-        , dir_pin : KlipperConfig.McuPinOutput
+        , dir_pin : KlipperConfig.McuPinOutput.Type
         -- Enable pin (default is enable high; use ! to indicate enable low).
-        , enable_pin : Optional KlipperConfig.McuPinOutput
+        , enable_pin : Optional KlipperConfig.McuPinOutput.Type
         -- Endstop switch detection pin. If this endstop pin is on a
         -- different mcu than the stepper motor then it enables "multi-mcu-homing".
-        , endstop_pin: Optional KlipperConfig.McuPinInput
+        , endstop_pin: Optional KlipperConfig.McuPinInput.Type
         -- Distance (in mm) that the axis travels with one full rotation of
         -- the stepper motor (or final gear if gear_ratio is specified).
         , rotation_distance : Double
@@ -51,8 +51,8 @@ let StepperConfig =
         , angle : Optional Double
       }
     , default =
-        { enable_pin = None KlipperConfig.McuPinOutput
-        , endstop_pin = None KlipperConfig.McuPinInput
+        { enable_pin = None KlipperConfig.McuPinOutput.Type
+        , endstop_pin = None KlipperConfig.McuPinInput.Type
         , full_steps_per_rotation = None Natural
         , gear_ratio = None Text
         , step_pulse_duration = None Double
@@ -102,10 +102,10 @@ let NamedStepper : Type =
 let toStepperConfigText
     : StepperConfig.Type -> StepperConfigText
     = \(stepperConfig : StepperConfig.Type) ->
-    { step_pin = Some (KlipperConfig.renderMcuPin stepperConfig.step_pin)
-    , dir_pin = Some (KlipperConfig.renderMcuPin stepperConfig.dir_pin)
-    , enable_pin = Prelude.Optional.map KlipperConfig.renderMcuPin stepperConfig.enable_pin
-    , endstop_pin = Prelude.Optional.map KlipperConfig.renderMcuPin stepperConfig.endstop_pin
+    { step_pin = Some (KlipperConfig.renderMcuPinOutput stepperConfig.step_pin)
+    , dir_pin = Some (KlipperConfig.renderMcuPinOutput stepperConfig.dir_pin)
+    , enable_pin = Prelude.Optional.map KlipperConfig.McuPinOutput.Type Text KlipperConfig.renderMcuPinOutput stepperConfig.enable_pin
+    , endstop_pin = Prelude.Optional.map KlipperConfig.McuPinInput.Type Text KlipperConfig.renderMcuPinInput stepperConfig.endstop_pin
     , rotation_distance = Some (Prelude.Double.show stepperConfig.rotation_distance)
     , microsteps = Some (Prelude.Natural.show stepperConfig.microsteps)
     , full_steps_per_rotation = Prelude.Optional.map Natural Text Prelude.Natural.show stepperConfig.full_steps_per_rotation
