@@ -21,6 +21,9 @@ let OctopusProV11MCU = Types.MCU::{
         },
         endstop_pin = Some KlipperConfig.McuPinInput::{
             hardware_name = "PG6"
+        },
+        uart_pin = Some KlipperConfig.McuPinOutput::{
+            hardware_name = "PC4"
         }
     },
     stepper_y = Types.StepperInterface::{
@@ -36,6 +39,9 @@ let OctopusProV11MCU = Types.MCU::{
         },
         endstop_pin = Some KlipperConfig.McuPinInput::{
             hardware_name = "PG9"
+        },
+        uart_pin = Some KlipperConfig.McuPinOutput::{
+            hardware_name = "PD11"
         }
     },
     stepper_z = Types.StepperInterface::{
@@ -51,6 +57,9 @@ let OctopusProV11MCU = Types.MCU::{
         },
         endstop_pin = Some KlipperConfig.McuPinInput::{
             hardware_name = "PG10"
+        },
+        uart_pin = Some KlipperConfig.McuPinOutput::{
+            hardware_name = "PC6"
         }
     },
     stepper_z1 = Some Types.StepperInterface::{
@@ -63,6 +72,9 @@ let OctopusProV11MCU = Types.MCU::{
         enable_pin = Some KlipperConfig.McuPinOutput::{
             hardware_name = "PA2",
             reverse_polarity = True
+        },
+        uart_pin = Some KlipperConfig.McuPinOutput::{
+            hardware_name = "PC7"
         }
     },
     stepper_z2 = Some Types.StepperInterface::{
@@ -76,6 +88,9 @@ let OctopusProV11MCU = Types.MCU::{
         enable_pin = Some KlipperConfig.McuPinOutput::{
             hardware_name = "PG2",
             reverse_polarity = True
+        },
+        uart_pin = Some KlipperConfig.McuPinOutput::{
+            hardware_name = "PF2"
         }
     },
     stepper_z3 = Some Types.StepperInterface::{
@@ -88,6 +103,9 @@ let OctopusProV11MCU = Types.MCU::{
         enable_pin = Some KlipperConfig.McuPinOutput::{
             hardware_name = "PG1",
             reverse_polarity = True
+        },
+        uart_pin = Some KlipperConfig.McuPinOutput::{
+            hardware_name = "PE4"
         }
     },
 

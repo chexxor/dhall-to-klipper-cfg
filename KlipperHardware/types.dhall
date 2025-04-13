@@ -14,11 +14,14 @@ let StepperInterface = {
         enable_pin: Optional KlipperConfig.McuPinOutput.Type,
         -- Endstop switch detection pin. If this endstop pin is on a
         -- different mcu than the stepper motor then it enables "multi-mcu-homing".
-        endstop_pin: Optional KlipperConfig.McuPinInput.Type
+        endstop_pin: Optional KlipperConfig.McuPinInput.Type,
+        -- The pin connected to the TMC2208 PDN_UART line.
+        uart_pin: Optional KlipperConfig.McuPinOutput.Type
     },
     default = {
         enable_pin = None KlipperConfig.McuPinOutput.Type,
-        endstop_pin = None KlipperConfig.McuPinInput.Type
+        endstop_pin = None KlipperConfig.McuPinInput.Type,
+        uart_pin = None KlipperConfig.McuPinOutput.Type
     }
 }
 

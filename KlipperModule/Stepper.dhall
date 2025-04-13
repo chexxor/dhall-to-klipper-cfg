@@ -9,6 +9,8 @@ let Prelude =
     , Map = https://prelude.dhall-lang.org/Map/package.dhall
     }
 
+let StepperDriverModule = ./StepperDriver.dhall
+
 let StepperConfig =
     { Type =
         -- Step GPIO pin (triggered high).
@@ -97,6 +99,7 @@ let StepperConfigText =
 let NamedStepper : Type =
     { name : Text
     , stepper : StepperConfig.Type
+    , stepper_driver : StepperDriverModule.StepperDriver
     }
 
 let toStepperConfigText
@@ -131,6 +134,11 @@ let toKlipperConfigSection
         , prefix = None Text
         , properties = toMap (toStepperConfigText namedStepper.stepper)
         }]
+        #
+        StepperDriverModule.toKlipperConfigSection
+            { name = namedStepper.name
+            , stepper_driver = namedStepper.stepper_driver
+            }
 
 in  { NamedStepper = NamedStepper
     , StepperConfig = StepperConfig

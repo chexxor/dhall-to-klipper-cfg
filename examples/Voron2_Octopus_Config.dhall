@@ -8,18 +8,29 @@ let FanModule = ./../KlipperModule/Fan.dhall
 let McuModule = ./../KlipperModule/Mcu.dhall
 let McuHardware = ./../KlipperHardware/mcu/octopus_pro_v1.1.dhall
 let KlipperHardware = ./../KlipperHardware/types.dhall
+let StepperDriverModule = ./../KlipperModule/StepperDriver.dhall
 
 let mcu = McuModule.toKlipperConfigSection
     { name = None Text
     , mcu = McuModule.McuConfig::{ serial = "/dev/ttyACM0" }
     }
 
-let stepper =
+let stepper
+    : { name : Text
+    , step_pin : KlipperConfig.McuPinOutput.Type
+    , dir_pin : KlipperConfig.McuPinOutput.Type
+    , enable_pin : Optional KlipperConfig.McuPinOutput.Type
+    , endstop_pin : Optional KlipperConfig.McuPinInput.Type
+    , uart_pin : Optional KlipperConfig.McuPinOutput.Type
+    }
+    -> StepperModule.NamedStepper
+    =
     \(params : { name : Text
                , step_pin : KlipperConfig.McuPinOutput.Type
                , dir_pin : KlipperConfig.McuPinOutput.Type
                , enable_pin : Optional KlipperConfig.McuPinOutput.Type
                , endstop_pin : Optional KlipperConfig.McuPinInput.Type
+               , uart_pin : Optional KlipperConfig.McuPinOutput.Type
                })
     ->
     { name = params.name
@@ -34,14 +45,35 @@ let stepper =
         , position_endstop = Some 250.0
         , position_max = Some 250.0
         }
+    , stepper_driver = StepperDriverModule.StepperDriver.TMC2209 StepperDriverModule.TMC2209.TMC2209::
+        { uart_pin = Prelude.Optional.default KlipperConfig.McuPinOutput.Type
+            KlipperConfig.McuPinOutput::{
+                hardware_name = "mcu_has_no_uart_pin"
+            }
+            params.uart_pin
+        , interpolate = Some False
+        , run_current = 0.8
+        , sense_resistor = Some 0.110
+        , stealthchop_threshold = Some 0.0
+        }
     }
 
-let stepperZ =
+let stepperZ
+    : { name : Text
+    , step_pin : KlipperConfig.McuPinOutput.Type
+    , dir_pin : KlipperConfig.McuPinOutput.Type
+    , enable_pin : Optional KlipperConfig.McuPinOutput.Type
+    , endstop_pin : Optional KlipperConfig.McuPinInput.Type
+    , uart_pin : Optional KlipperConfig.McuPinOutput.Type
+    }
+    -> StepperModule.NamedStepper
+    =
     \(params : { name : Text
                , step_pin : KlipperConfig.McuPinOutput.Type
                , dir_pin : KlipperConfig.McuPinOutput.Type
                , enable_pin : Optional KlipperConfig.McuPinOutput.Type
                , endstop_pin : Optional KlipperConfig.McuPinInput.Type
+               , uart_pin : Optional KlipperConfig.McuPinOutput.Type
                })
     ->
     { name = params.name
@@ -61,6 +93,17 @@ let stepperZ =
         , second_homing_speed = Some 3
         , homing_retract_dist = Some 3.0
         }
+    , stepper_driver = StepperDriverModule.StepperDriver.TMC2209 StepperDriverModule.TMC2209.TMC2209::
+        { uart_pin = Prelude.Optional.default KlipperConfig.McuPinOutput.Type
+            KlipperConfig.McuPinOutput::{
+                hardware_name = "mcu_has_no_uart_pin"
+            }
+            params.uart_pin
+        , interpolate = Some False
+        , run_current = 0.8
+        , sense_resistor = Some 0.110
+        , stealthchop_threshold = Some 0.0
+        }
     }
 
 let stepperX = stepper {
@@ -69,6 +112,7 @@ let stepperX = stepper {
     , dir_pin = McuHardware.stepper_x.dir_pin
     , enable_pin = McuHardware.stepper_x.enable_pin
     , endstop_pin = McuHardware.stepper_x.endstop_pin
+    , uart_pin = McuHardware.stepper_x.uart_pin
 }
 
 let stepperY = stepper {
@@ -77,6 +121,7 @@ let stepperY = stepper {
     , dir_pin = McuHardware.stepper_y.dir_pin
     , enable_pin = McuHardware.stepper_y.enable_pin
     , endstop_pin = McuHardware.stepper_y.endstop_pin
+    , uart_pin = McuHardware.stepper_y.uart_pin
 }
 
 let stepperZ0 = stepperZ {
@@ -85,6 +130,7 @@ let stepperZ0 = stepperZ {
     , dir_pin = McuHardware.stepper_z.dir_pin
     , enable_pin = McuHardware.stepper_z.enable_pin
     , endstop_pin = McuHardware.stepper_z.endstop_pin
+    , uart_pin = McuHardware.stepper_z.uart_pin
 }
 
 let stepperZ1 = Prelude.Optional.map
@@ -96,6 +142,7 @@ let stepperZ1 = Prelude.Optional.map
         , dir_pin = stepper.dir_pin
         , enable_pin = stepper.enable_pin
         , endstop_pin = stepper.endstop_pin
+        , uart_pin = stepper.uart_pin
     })
     McuHardware.stepper_z1
 
@@ -108,6 +155,7 @@ let stepperZ2 = Prelude.Optional.map
         , dir_pin = stepper.dir_pin
         , enable_pin = stepper.enable_pin
         , endstop_pin = stepper.endstop_pin
+        , uart_pin = stepper.uart_pin
     })
     McuHardware.stepper_z2
 
@@ -120,6 +168,7 @@ let stepperZ3 = Prelude.Optional.map
         , dir_pin = stepper.dir_pin
         , enable_pin = stepper.enable_pin
         , endstop_pin = stepper.endstop_pin
+        , uart_pin = stepper.uart_pin
     })
     McuHardware.stepper_z3
 
