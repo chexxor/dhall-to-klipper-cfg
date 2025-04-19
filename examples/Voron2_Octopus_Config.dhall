@@ -134,8 +134,8 @@ let stepperZ0 = stepperZ {
 }
 
 let stepperZ1 = Prelude.Optional.map
-    KlipperHardware.StepperInterface.Type StepperModule.NamedStepper
-    (\(stepper : KlipperHardware.StepperInterface.Type)
+    KlipperHardware.StepperConnector.Type StepperModule.NamedStepper
+    (\(stepper : KlipperHardware.StepperConnector.Type)
     -> stepperZ {
         name = "stepper_z1"
         , step_pin = stepper.step_pin
@@ -147,8 +147,8 @@ let stepperZ1 = Prelude.Optional.map
     McuHardware.stepper_z1
 
 let stepperZ2 = Prelude.Optional.map
-    KlipperHardware.StepperInterface.Type StepperModule.NamedStepper
-    (\(stepper : KlipperHardware.StepperInterface.Type)
+    KlipperHardware.StepperConnector.Type StepperModule.NamedStepper
+    (\(stepper : KlipperHardware.StepperConnector.Type)
     -> stepperZ {
         name = "stepper_z2"
         , step_pin = stepper.step_pin
@@ -160,8 +160,8 @@ let stepperZ2 = Prelude.Optional.map
     McuHardware.stepper_z2
 
 let stepperZ3 = Prelude.Optional.map
-    KlipperHardware.StepperInterface.Type StepperModule.NamedStepper
-    (\(stepper : KlipperHardware.StepperInterface.Type)
+    KlipperHardware.StepperConnector.Type StepperModule.NamedStepper
+    (\(stepper : KlipperHardware.StepperConnector.Type)
     -> stepperZ {
         name = "stepper_z3"
         , step_pin = stepper.step_pin

@@ -1,14 +1,14 @@
-let Types = ./../types.dhall
+let HardwareTypes = ./../types.dhall
 let KlipperConfig = ./../../klipperConfig.dhall
 
-let OctopusProV11MCU = Types.MCU::{
+let OctopusProV11MCU = HardwareTypes.MCU::{
     -- Basic MCU configuration
     serial = "/dev/serial/by-id/usb-Klipper_Klipper_firmware_12345-if00",
     baudrate = 250000,
     restart_method = "command",
 
     -- Stepper motor pins
-    stepper_x = Types.StepperInterface::{
+    stepper_x = HardwareTypes.StepperConnector::{
         step_pin = KlipperConfig.McuPinOutput::{
             hardware_name = "PF13"
         },
@@ -26,7 +26,7 @@ let OctopusProV11MCU = Types.MCU::{
             hardware_name = "PC4"
         }
     },
-    stepper_y = Types.StepperInterface::{
+    stepper_y = HardwareTypes.StepperConnector::{
         step_pin = KlipperConfig.McuPinOutput::{
             hardware_name = "PG0"
         },
@@ -44,7 +44,7 @@ let OctopusProV11MCU = Types.MCU::{
             hardware_name = "PD11"
         }
     },
-    stepper_z = Types.StepperInterface::{
+    stepper_z = HardwareTypes.StepperConnector::{
         step_pin = KlipperConfig.McuPinOutput::{
             hardware_name = "PF11"
         },
@@ -62,7 +62,7 @@ let OctopusProV11MCU = Types.MCU::{
             hardware_name = "PC6"
         }
     },
-    stepper_z1 = Some Types.StepperInterface::{
+    stepper_z1 = Some HardwareTypes.StepperConnector::{
         step_pin = KlipperConfig.McuPinOutput::{
             hardware_name = "PG4"
         },
@@ -77,7 +77,7 @@ let OctopusProV11MCU = Types.MCU::{
             hardware_name = "PC7"
         }
     },
-    stepper_z2 = Some Types.StepperInterface::{
+    stepper_z2 = Some HardwareTypes.StepperConnector::{
         step_pin = KlipperConfig.McuPinOutput::{
             hardware_name = "PF9"
         },
@@ -93,7 +93,7 @@ let OctopusProV11MCU = Types.MCU::{
             hardware_name = "PF2"
         }
     },
-    stepper_z3 = Some Types.StepperInterface::{
+    stepper_z3 = Some HardwareTypes.StepperConnector::{
         step_pin = KlipperConfig.McuPinOutput::{
             hardware_name = "PC13"
         },
@@ -111,7 +111,7 @@ let OctopusProV11MCU = Types.MCU::{
 
     -- Extruder pins
     extruder = {
-        stepper = Types.StepperInterface::{
+        stepper = HardwareTypes.StepperConnector::{
             step_pin = KlipperConfig.McuPinOutput::{
                 hardware_name = "PF11"
             },

@@ -1,16 +1,14 @@
-let KlipperConfig = ../klipperConfig.dhall
-let StepperType = ./StepperType.dhall
-let Prelude =
-    { Text = https://prelude.dhall-lang.org/Text/package.dhall
-    , List = https://prelude.dhall-lang.org/List/package.dhall
-    , Natural = https://prelude.dhall-lang.org/Natural/package.dhall
-    , Double = https://prelude.dhall-lang.org/Double/package.dhall
-    , Bool = https://prelude.dhall-lang.org/Bool/package.dhall
-    , Optional = https://prelude.dhall-lang.org/Optional/package.dhall
-    , Map = https://prelude.dhall-lang.org/Map/package.dhall
-    }
+let StepperType = ./../../KlipperModule/StepperType.dhall
 
-let StepperDriverModule = ./StepperDriver.dhall
+let StepperConfig =
+    -- StepperType::
+        { microsteps = 32
+        , full_steps_per_rotation = 200
+        -- Read this doc page to calculate rotation_distance:
+        --   https://www.klipper3d.org/Rotation_Distance.html
+        , rotation_distance = 40
+        }
+
 
 -- let StepperConfig =
 --     { Type =
@@ -52,7 +50,7 @@ let StepperDriverModule = ./StepperDriver.dhall
 --         , second_homing_positive_dir : Optional Bool
 --         , arm_length : Optional Double
 --         , angle : Optional Double
---       }
+--         }
 --     , default =
 --         { enable_pin = None KlipperConfig.McuPinOutput.Type
 --         , endstop_pin = None KlipperConfig.McuPinInput.Type
@@ -70,36 +68,9 @@ let StepperDriverModule = ./StepperDriver.dhall
 --         , second_homing_positive_dir = None Bool
 --         , arm_length = None Double
 --         , angle = None Double
---       }
+--         }
 --     }
-
--- let makeStepperConfig
---     : Text
---     -> StepperDriverModule.StepperDriver
---     -> StepperConfig.Type
---     = \(stepperDriver : StepperDriverModule.StepperDriver) ->
---     StepperConfig::
---     { step_pin = Some (KlipperConfig.renderMcuPinOutput stepperDriver.step_pin)
---     , dir_pin = Some (KlipperConfig.renderMcuPinOutput stepperDriver.dir_pin)
---     , enable_pin = Prelude.Optional.map KlipperConfig.McuPinOutput.Type Text KlipperConfig.renderMcuPinOutput stepperDriver.enable_pin
---     }
-
--- let toKlipperConfigSection
---     : StepperType.NamedStepper -> List KlipperConfig.KlipperConfigSection
---     = \(namedStepper : StepperType.NamedStepper) ->
---         StepperType.toKlipperConfigSection
---             { name = namedStepper.name
---             , stepper = namedStepper.stepper
---             , stepper_driver = namedStepper.stepper_driver
---             }
---             #
---             StepperDriverModule.toKlipperConfigSection
---                 { name = namedStepper.name
---                 , stepper_driver = namedStepper.stepper_driver
---                 }
 
 in
-    { NamedStepper = StepperType.NamedStepper
-    , StepperConfig = StepperType
-    , toKlipperConfigSection = StepperType.toKlipperConfigSection
+    { StepperConfig = StepperConfig
     }

@@ -1,4 +1,5 @@
 let KlipperConfig = ../../klipperConfig.dhall
+let KlipperConfigSection = ../../klipperConfigSection.dhall
 let Prelude =
     { Text = https://prelude.dhall-lang.org/Text/package.dhall
     , List = https://prelude.dhall-lang.org/List/package.dhall
@@ -164,9 +165,6 @@ let TMC2209Text =
     , diag_pin : Optional Text
     }
 
-
-
-
 let toTMC2209Text
     : TMC2209.Type -> TMC2209Text
     = \(tmc2209 : TMC2209.Type) ->
@@ -216,8 +214,32 @@ let toKlipperConfigSection
         , properties = toMap (toTMC2209Text namedTMC2209.tmc2209)
         }]
 
-in  { NamedTMC2209 = NamedTMC2209
-    , TMC2209 = TMC2209
+-- in  { NamedTMC2209 = NamedTMC2209
+--     , TMC2209 = TMC2209
+--     , toKlipperConfigSection = toKlipperConfigSection
+--     , toTMC2209Text = toTMC2209Text
+--     }
+
+
+
+-- in { Type = TMC2209.Type
+--         //\\ (KlipperConfigSection TMC2209.Type)
+--     , default = TMC2209.default
+--         //\\ { toKlipperConfigSection = (toKlipperConfigSection TMC2209.Type) }
+--     }
+
+-- in \(t : Type)
+    -- -> { toKlipperConfigSection :
+    --     ∀(a : Type)
+    --     → ∀(t : a)
+    --     → List KlipperConfig.KlipperConfigSection
+    --     }
+
+in
+    { Type = TMC2209.Type
+    , default = TMC2209.default
     , toKlipperConfigSection = toKlipperConfigSection
     , toTMC2209Text = toTMC2209Text
+    -- , toKlipperConfigSection
+    --     = (toKlipperConfigSection TMC2209.Type) : KlipperConfigSection TMC2209.Type
     }

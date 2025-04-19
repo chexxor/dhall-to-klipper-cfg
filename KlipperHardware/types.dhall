@@ -2,7 +2,7 @@ let Prelude = https://prelude.dhall-lang.org/package.dhall
 let McuModule = ../KlipperModule/Mcu.dhall
 let KlipperConfig = ../KlipperConfig.dhall
 
-let StepperInterface = {
+let StepperConnector = {
     Type = {
         -- Step GPIO pin (triggered high).
         step_pin: KlipperConfig.McuPinOutput.Type,
@@ -16,12 +16,18 @@ let StepperInterface = {
         -- different mcu than the stepper motor then it enables "multi-mcu-homing".
         endstop_pin: Optional KlipperConfig.McuPinInput.Type,
         -- The pin connected to the TMC2208 PDN_UART line.
-        uart_pin: Optional KlipperConfig.McuPinOutput.Type
+        uart_pin: Optional KlipperConfig.McuPinOutput.Type,
+        -- If using separate receive and transmit lines to communicate with
+        --   the driver then set uart_pin to the receive pin and tx_pin to the
+        --   transmit pin. The default is to use uart_pin for both reading and
+        --   writing.
+        tx_pin: Optional KlipperConfig.McuPinOutput.Type
     },
     default = {
         enable_pin = None KlipperConfig.McuPinOutput.Type,
         endstop_pin = None KlipperConfig.McuPinInput.Type,
-        uart_pin = None KlipperConfig.McuPinOutput.Type
+        uart_pin = None KlipperConfig.McuPinOutput.Type,
+        tx_pin = None KlipperConfig.McuPinOutput.Type
     }
 }
 
@@ -35,10 +41,22 @@ let FanInterface = {
 }
 
 let ExtruderInterface = {
-    stepper: StepperInterface.Type,
+    stepper: StepperConnector.Type,
     heater: HeaterInterface,
     fan: FanInterface
 }
+
+let ThermistorInterface = {
+    pin: KlipperConfig.McuPinInput.Type,
+    type: Text,
+    sensor_type: Text
+}
+
+let ThermistorInterface = \(t : Type) ->
+    { pin : Optional KlipperConfig.McuPinInput.Type
+    , type : Text
+    , sensor_type : Text
+    }
 
 
 let MCU = {
@@ -48,12 +66,12 @@ let MCU = {
         baudrate: Natural,
         restart_method: Text,
         -- Stepper motor pins
-        stepper_x : StepperInterface.Type,
-        stepper_y : StepperInterface.Type,
-        stepper_z : StepperInterface.Type,
-        stepper_z1 : Optional StepperInterface.Type,
-        stepper_z2 : Optional StepperInterface.Type,
-        stepper_z3 : Optional StepperInterface.Type,
+        stepper_x : StepperConnector.Type,
+        stepper_y : StepperConnector.Type,
+        stepper_z : StepperConnector.Type,
+        stepper_z1 : Optional StepperConnector.Type,
+        stepper_z2 : Optional StepperConnector.Type,
+        stepper_z3 : Optional StepperConnector.Type,
         -- Extruder pins
         extruder: ExtruderInterface,
         -- Bed pins
@@ -75,9 +93,9 @@ let MCU = {
         pin_aliases: Optional (Prelude.Map.Type Text Text)
     },
     default = {
-        stepper_z1 = None StepperInterface.Type,
-        stepper_z2 = None StepperInterface.Type,
-        stepper_z3 = None StepperInterface.Type,
+        stepper_z1 = None StepperConnector.Type,
+        stepper_z2 = None StepperConnector.Type,
+        stepper_z3 = None StepperConnector.Type,
         extra_fans = None (List KlipperConfig.McuPinOutput.Type),
         pin_aliases = None (Prelude.Map.Type Text Text),
     }
@@ -174,10 +192,11 @@ let MCU = {
 --     software: Software
 -- }
 
-in {
-    StepperInterface = StepperInterface,
-    ExtruderInterface = ExtruderInterface,
-    HeaterInterface = HeaterInterface,
-    FanInterface = FanInterface,
-    MCU = MCU
+in
+    { StepperConnector = StepperConnector
+    , ExtruderInterface = ExtruderInterface
+    , HeaterInterface = HeaterInterface
+    , FanInterface = FanInterface
+    , MCU = MCU
+    , ThermistorInterface = ThermistorInterface
 }

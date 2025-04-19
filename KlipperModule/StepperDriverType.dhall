@@ -21,21 +21,16 @@ let NamedStepperDriver : Type =
     , stepper_driver : StepperDriver
     }
 
--- let NamedTMC2209 : Type =
---     { name : Text
---     , tmc2209 : TMC2209.Type
---     }
-
 let toKlipperConfigSection
     : NamedStepperDriver -> List KlipperConfig.KlipperConfigSection
     = \(namedStepperDriver : NamedStepperDriver) ->
         ([] : List KlipperConfig.KlipperConfigSection)
             # (merge {
-                TMC2209 = \(tmc2209Config : TMC2209Module.Type) ->
-                    TMC2209Module.toKlipperConfigSection
-                        { name = namedStepperDriver.name
-                        , tmc2209 = tmc2209Config
-                        }
+                TMC2209 = \(tmc2209Config : TMC2209Module.Type) -> [
+                    { name = "tmc2209"
+                    , prefix = Some namedStepperDriver.name
+                    , properties = toMap (TMC2209Module.toTMC2209Text tmc2209Config)
+                    }]
                 }
                 namedStepperDriver.stepper_driver
             )

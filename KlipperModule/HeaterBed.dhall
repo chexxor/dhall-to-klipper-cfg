@@ -9,9 +9,9 @@ let Prelude =
 
 let HeaterBedConfig =
     { Type =
-        { heater_pin : Text
+        { heater_pin : KlipperConfig.McuPinOutput.Type
         , sensor_type : Text
-        , sensor_pin : Text
+        , sensor_pin : KlipperConfig.McuPinInput.Type
         , control : Text
         , min_temp : Double
         , max_temp : Double
@@ -23,6 +23,9 @@ let HeaterBedConfig =
         { pid_Kp = None Double
         , pid_Ki = None Double
         , pid_Kd = None Double
+        , control = "pid"
+        , min_temp = 0.0
+        , max_temp = 120.0
         }
     }
 
@@ -41,9 +44,9 @@ let HeaterBedConfigText =
 let toHeaterBedConfigText
     : HeaterBedConfig.Type -> HeaterBedConfigText
     = \(heaterBed : HeaterBedConfig.Type) ->
-        { heater_pin = Some heaterBed.heater_pin
+        { heater_pin = Some (KlipperConfig.renderMcuPinOutput heaterBed.heater_pin)
         , sensor_type = Some heaterBed.sensor_type
-        , sensor_pin = Some heaterBed.sensor_pin
+        , sensor_pin = Some (KlipperConfig.renderMcuPinInput heaterBed.sensor_pin)
         , control = Some heaterBed.control
         , min_temp = Some (Prelude.Double.show heaterBed.min_temp)
         , max_temp = Some (Prelude.Double.show heaterBed.max_temp)

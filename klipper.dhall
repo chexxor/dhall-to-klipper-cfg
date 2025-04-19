@@ -6,7 +6,7 @@ let Prelude =
     , Optional = https://prelude.dhall-lang.org/Optional/package.dhall
     }
 
-let PrinterModule = ./config/modules/printer.dhall
+let PrinterModule = ./KlipperModule/printer.dhall
 
 
 let MCU =
@@ -158,20 +158,22 @@ let DeltaParams =
 
 let convertToKlipperFields = \(record : { _ : { _ : Text } }) ->
     let convertFieldName = \(name : Text) ->
-        Prelude.Text.lowerASCII (Prelude.Text.replace "([A-Z])" ("_" ++ "${1}") name)
+        Prelude.Text.lowerASCII (Prelude.Text.replace "([A-Z])" "_$1" name)
 
     let convertValue = \(value : { _ : Text }) ->
-        merge
-            { Text = \(x : Text) -> x
-            , Natural = \(x : Natural) -> Prelude.Natural.show x
-            , Double = \(x : Double) -> Prelude.Double.show x
-            , Bool = \(x : Bool) -> Prelude.Bool.show x
-            , List = \(x : List { _ : Text }) ->
-                Prelude.Text.concatMapSep ", " { _ : Text } (\(y : { _ : Text }) ->
-                    convertValue y
-                ) x
-            }
-            value
+        let convertValue2 = \(value2 : { _ : Text }) ->
+            merge
+                { Text = \(x : Text) -> x
+                , Natural = \(x : Natural) -> Prelude.Natural.show x
+                , Double = \(x : Double) -> Prelude.Double.show x
+                , Bool = \(x : Bool) -> Prelude.Bool.show x
+                , List = \(x : List { _ : Text }) ->
+                    Prelude.Text.concatMapSep ", " { _ : Text } (\(y : { _ : Text }) ->
+                        convertValue y
+                    ) x
+                }
+                value2
+        in convertValue2 value
 
     let example0 = assert : convertFieldName "maxVelocity" ≡ "max_velocity"
     let example1 = assert : convertFieldName "stepperXStep" ≡ "stepper_x_step"
@@ -252,7 +254,7 @@ let renderMCU = \(name : Text) -> \(mcu : MCU.Type) ->
         # renderDisplay mcu.display
         # renderOptionalRecord mcu.pin_aliases
 
-    renderSection "mcu" name allFields
+    in renderSection "mcu" name allFields
 
 let renderOptional = \(a : Type) -> \(f : a -> Text) -> \(optional : Optional a) ->
     Prelude.Optional.fold a optional Text f ""
@@ -302,7 +304,8 @@ let renderConfig = \(printer : Printer.Type) ->
     let sections = sections # Prelude.Optional.fold MCU.Type printer.mcu (List Text) (\(mcu : MCU.Type) -> [ renderMCU "mcu" mcu ]) ([] : List Text)
     in Prelude.Text.concatSep "\n\n" sections
 
-in  { Printer = Printer
+in
+    { Printer = Printer
     , Stepper = Stepper
     , Extruder = Extruder
     , Heater = Heater
